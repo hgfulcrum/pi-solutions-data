@@ -1,6 +1,6 @@
-{
-  "client": "Prodeman S.A.",
-  "process": "",
-  "target": 0,
-  "unit": "kg"
+﻿{
+    "target":  0,
+    "process":  "Molienda y clasificación de granos",
+    "unit":  "ton",
+    "client":  "Prodeman S.A."
 }
