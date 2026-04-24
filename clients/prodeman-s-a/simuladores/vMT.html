@@ -1,0 +1,944 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Big Bag Filling System</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #f3f4f6;
+  color: #111827;
+  font-family: "SF Compact Text", Arial, sans-serif;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 18px 16px 24px;
+  gap: 12px;
+}
+
+.brand {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 5;
+}
+
+.brand img {
+  width: 173px;
+  height: auto;
+  display: block;
+}
+
+header { text-align: center; }
+
+header h1 {
+  font-size: clamp(0.95rem, 2.6vw, 1.3rem);
+  font-weight: 800;
+  font-style: italic;
+  color: #1f2937;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-family: "SF Compact Text", Arial, sans-serif;
+}
+
+header p {
+  font-size: clamp(0.68rem, 1.5vw, 0.8rem);
+  color: #4b5563;
+  margin-top: 4px;
+  font-style: normal;
+  font-weight: 600;
+  font-family: "SF Compact Text", Arial, sans-serif;
+}
+
+.wrapper {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 860px;
+}
+
+.svg-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+}
+
+svg#plant {
+  width: 100%;
+  max-width: 340px;
+  height: auto;
+  overflow: visible;
+  font-family: "SF Compact Text", Arial, sans-serif;
+}
+
+svg#plant text {
+  font-family: "SF Compact Text", Arial, sans-serif;
+  font-style: italic;
+}
+
+.sidebar {
+  width: 196px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.06);
+}
+
+.lbl {
+  font-size: 0.58rem;
+  color: #4b5563;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 3px;
+  font-weight: 800;
+  font-style: italic;
+  font-family: "SF Compact Text", Arial, sans-serif;
+}
+
+.phase-name {
+  font-size: 0.92rem;
+  font-weight: 800;
+  font-style: italic;
+  color: #111827;
+  letter-spacing: 0.06em;
+  font-family: "SF Compact Text", Arial, sans-serif;
+}
+
+.phase-desc {
+  font-size: 0.62rem;
+  color: #6b7280;
+  margin-top: 5px;
+  line-height: 1.55;
+  white-space: pre-line;
+  font-style: normal;
+  font-family: "SF Compact Text", Arial, sans-serif;
+}
+
+.weight-card {
+  background: linear-gradient(180deg, #ffffff 0%, #eef2f7 100%);
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px 12px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.06);
+}
+.weight-card .lbl { color: #1d4ed8; text-align: left; }
+.weight-num {
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: #1e3a8a;
+  font-variant-numeric: tabular-nums;
+  font-family: "SF Compact Text", Arial, sans-serif;
+  font-style: italic;
+  line-height: 1;
+}
+.weight-unit { font-size: 0.68rem; color: #2563eb; opacity: 0.8; }
+.weight-target { font-size: 0.58rem; color: #6b7280; margin-top: 3px; }
+.prog-bar { margin-top: 7px; height: 6px; background: #dbeafe; border-radius: 999px; overflow: hidden; }
+.prog-fill { height: 100%; background: linear-gradient(90deg, #2563eb, #60a5fa); border-radius: 999px; width: 0%; }
+
+.metal-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.led {
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  background: #16a34a;
+  box-shadow: 0 0 7px #16a34a;
+  flex-shrink: 0;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.led.alert {
+  background: #ef4444;
+  box-shadow: 0 0 7px #ef4444;
+  animation: blink 0.45s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+.metal-txt { font-size: 0.7rem; font-weight: 600; font-family: "SF Compact Text", Arial, sans-serif; font-style: italic; }
+.metal-sub { font-size: 0.56rem; color: #6b7280; margin-top: 1px; font-family: "SF Compact Text", Arial, sans-serif; }
+
+.legend { display: flex; flex-direction: column; gap: 5px; }
+.legend-item { display: flex; align-items: flex-start; gap: 6px; }
+.ldot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 2px; }
+.ltxt { font-size: 0.62rem; color: #374151; line-height: 1.35; font-family: "SF Compact Text", Arial, sans-serif; }
+
+.controls { display: flex; gap: 6px; }
+button {
+  flex: 1;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #111827;
+  padding: 6px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.68rem;
+  font-family: "SF Compact Text", Arial, sans-serif;
+  font-style: italic;
+  font-weight: 700;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+button:hover { background: #f9fafb; }
+button.on { background: #2563eb; border-color: #2563eb; color: #fff; }
+
+.note {
+  font-size: 0.58rem;
+  color: #6b7280;
+  text-align: center;
+  margin-top: 4px;
+}
+
+.footnote {
+  max-width: 860px;
+  text-align: center;
+  font-size: 0.68rem;
+  line-height: 1.5;
+  color: #6b7280;
+}
+
+@media (max-width: 600px) {
+  .wrapper { flex-direction: column; align-items: center; }
+  .sidebar { width: 100%; max-width: 340px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .sidebar > .controls { grid-column: 1 / -1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="brand">
+  <div class="brand-logo">
+    <img src="data:image/png;base64,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" alt="Fulcrum logo">
+  </div>
+</div>
+
+<header>
+  <h1>BIG BAG FILLING SYSTEM</h1>
+  <p>GF MD system for big bag</p>
+</header>
+
+<div class="wrapper">
+  <div class="svg-wrap">
+    <svg id="plant" viewBox="0 0 310 640" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="pnut" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+          <rect width="10" height="10" fill="#b59a6a"/>
+          <ellipse cx="2.5" cy="2.5" rx="2.1" ry="1.3" fill="#8d754d" opacity="0.58"/>
+          <ellipse cx="7.5" cy="7" rx="2.1" ry="1.3" fill="#8d754d" opacity="0.58"/>
+          <ellipse cx="5" cy="5" rx="1.3" ry="0.9" fill="#ceb88e" opacity="0.4"/>
+        </pattern>
+
+        <pattern id="flow" x="0" y="0" width="12" height="12" patternUnits="userSpaceOnUse">
+          <rect width="12" height="12" fill="#bea273"/>
+          <ellipse cx="3" cy="3" rx="2.3" ry="1.4" fill="#846b44" opacity="0.56"/>
+          <ellipse cx="9" cy="9" rx="2.3" ry="1.4" fill="#846b44" opacity="0.56"/>
+          <ellipse cx="6" cy="6" rx="1.5" ry="1" fill="#d6c098" opacity="0.36"/>
+          <animateTransform attributeName="patternTransform" type="translate"
+            from="0,0" to="0,12" dur="0.55s" repeatCount="indefinite"/>
+        </pattern>
+
+        <linearGradient id="stl" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#6b7280"/>
+          <stop offset="30%" stop-color="#9ca3af"/>
+          <stop offset="60%" stop-color="#d1d5db"/>
+          <stop offset="100%" stop-color="#6b7280"/>
+        </linearGradient>
+
+        <linearGradient id="cylH" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#6b7280"/>
+          <stop offset="18%" stop-color="#9ca3af"/>
+          <stop offset="50%" stop-color="#d1d5db"/>
+          <stop offset="82%" stop-color="#9ca3af"/>
+          <stop offset="100%" stop-color="#6b7280"/>
+        </linearGradient>
+
+        <linearGradient id="cylFilled" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#5f5037"/>
+          <stop offset="20%" stop-color="#907750"/>
+          <stop offset="50%" stop-color="#a98e64"/>
+          <stop offset="80%" stop-color="#907750"/>
+          <stop offset="100%" stop-color="#5f5037"/>
+        </linearGradient>
+
+        <clipPath id="bagClip">
+          <rect x="96" y="351" width="108" height="158"/>
+        </clipPath>
+
+        <clipPath id="pipeClip">
+          <rect x="143" y="170" width="14" height="83"/>
+        </clipPath>
+
+        <clipPath id="yValveClip">
+          <polygon points="138,170 162,170 162,202 176,218 176,236 162,236 162,252 138,252 138,236 120,236 120,218 138,218"/>
+        </clipPath>
+
+        <clipPath id="teleClip">
+          <rect x="147" y="258" width="6" height="255"/>
+        </clipPath>
+
+        <marker id="dimArrow" viewBox="0 0 10 10" refX="5" refY="5"
+                markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#374151"/>
+        </marker>
+      </defs>
+
+      <rect x="55" y="522" width="200" height="5" fill="#9ca3af" rx="1"/>
+      <rect x="45" y="527" width="220" height="4" fill="#6b7280" rx="1"/>
+      <line x1="55" y1="526" x2="65" y2="531" stroke="#9ca3af" stroke-width="1"/>
+      <line x1="75" y1="526" x2="85" y2="531" stroke="#9ca3af" stroke-width="1"/>
+      <line x1="95" y1="526" x2="105" y2="531" stroke="#9ca3af" stroke-width="1"/>
+      <line x1="115" y1="526" x2="125" y2="531" stroke="#9ca3af" stroke-width="1"/>
+      <line x1="135" y1="526" x2="145" y2="531" stroke="#9ca3af" stroke-width="1"/>
+      <line x1="155" y1="526" x2="165" y2="531" stroke="#9ca3af" stroke-width="1"/>
+      <line x1="175" y1="526" x2="185" y2="531" stroke="#9ca3af" stroke-width="1"/>
+      <line x1="195" y1="526" x2="205" y2="531" stroke="#9ca3af" stroke-width="1"/>
+      <line x1="215" y1="526" x2="225" y2="531" stroke="#9ca3af" stroke-width="1"/>
+      <line x1="235" y1="526" x2="245" y2="531" stroke="#9ca3af" stroke-width="1"/>
+
+      <rect x="83" y="293" width="9" height="231" fill="url(#stl)" rx="1"/>
+      <rect x="208" y="293" width="9" height="231" fill="url(#stl)" rx="1"/>
+      <rect x="75" y="285" width="150" height="11" fill="url(#stl)" rx="2"/>
+      <rect x="-5" y="260" width="290" height="9" fill="url(#stl)" stroke="#6b7280" stroke-width="0.8" rx="1.5"/>
+      <text x="-66" y="258" font-size="9.8" fill="#374151" text-anchor="start" font-weight="700">MEZZANINE</text>
+      <text x="-66" y="270" font-size="9.8" fill="#374151" text-anchor="start" font-weight="700">PLATFORM</text>
+      <line x1="92" y1="306" x2="208" y2="410" stroke="#6b7280" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="92" y1="410" x2="208" y2="306" stroke="#6b7280" stroke-width="2.2" stroke-linecap="round"/>
+      <rect x="76" y="519" width="24" height="4" fill="url(#stl)" rx="1"/>
+      <rect x="200" y="519" width="24" height="4" fill="url(#stl)" rx="1"/>
+
+      <rect id="lcL" x="79" y="275" width="18" height="14" fill="#c97332" rx="2"/>
+      <rect x="80" y="276" width="16" height="5" fill="#e8b38a" opacity="0.45" rx="1"/>
+      <rect id="lcR" x="203" y="275" width="18" height="14" fill="#c97332" rx="2"/>
+      <rect x="204" y="276" width="16" height="5" fill="#e8b38a" opacity="0.45" rx="1"/>
+
+      <line x1="88" y1="289" x2="102" y2="355" stroke="#d1d5db" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="212" y1="289" x2="198" y2="355" stroke="#d1d5db" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="88" cy="289" r="2.5" fill="#4b5563"/>
+      <circle cx="212" cy="289" r="2.5" fill="#4b5563"/>
+      <circle cx="102" cy="355" r="2.5" fill="#4b5563"/>
+      <circle cx="198" cy="355" r="2.5" fill="#4b5563"/>
+
+      <rect x="95" y="350" width="110" height="160" fill="#f8fafc" stroke="#6b7280" stroke-width="1.5" rx="2"/>
+      <line x1="150" y1="352" x2="150" y2="508" stroke="#cbd5e1" stroke-width="1" opacity="0.8"/>
+
+      <g clip-path="url(#bagClip)">
+        <polygon id="bagFillPoly" points="" fill="url(#pnut)" opacity="0"/>
+        <polygon id="bagFlowPoly" points="" fill="url(#flow)" opacity="0"/>
+      </g>
+
+      <line id="fillLine" x1="95" y1="510" x2="205" y2="510"
+            stroke="#a98e64" stroke-width="1.5" stroke-dasharray="4,2" opacity="0"/>
+
+      <polygon id="tipFan" points="" fill="#bea273" opacity="0"/>
+      <g id="tDrizzle"></g>
+
+      <rect id="t0" x="141" y="260" width="18" height="68" fill="url(#cylH)" stroke="#6b7280" stroke-width="0.5"/>
+      <line x1="141" y1="328" x2="159" y2="328" stroke="#6b7280" stroke-width="1.5"/>
+      <rect id="t1" x="143" y="328" width="14" height="72" fill="url(#cylH)" stroke="#6b7280" stroke-width="0.5"/>
+      <line id="j1" x1="143" y1="400" x2="157" y2="400" stroke="#6b7280" stroke-width="1.5"/>
+      <rect id="t2" x="145" y="400" width="10" height="110" fill="url(#cylH)" stroke="#6b7280" stroke-width="0.5"/>
+
+      <g clip-path="url(#teleClip)">
+        <rect id="teleFlow" x="147" y="328" width="6" height="180" fill="url(#flow)" opacity="0"/>
+        <rect id="teleFill" x="147" y="508" width="6" height="0" fill="url(#pnut)" opacity="0"/>
+      </g>
+
+      <rect x="143" y="170" width="14" height="82" fill="url(#cylH)" stroke="#6b7280" stroke-width="0.5"/>
+      <g clip-path="url(#pipeClip)">
+        <rect id="pipeFlow" x="143" y="170" width="14" height="82" fill="url(#flow)" opacity="0"/>
+      </g>
+      <rect x="136" y="165" width="28" height="7" fill="url(#stl)" rx="1"/>
+      <rect x="136" y="252" width="28" height="8" fill="url(#stl)" rx="1"/>
+      <line x1="150" y1="172" x2="150" y2="252" stroke="#9ca3af" stroke-width="0.8"
+            stroke-dasharray="6,5" opacity="0.5"/>
+
+      <rect x="125" y="118" width="50" height="48" fill="#e5e7eb" stroke="#2563eb" stroke-width="1.5" rx="3"/>
+      <rect x="134" y="127" width="32" height="30" fill="#cbd5e1" stroke="#1d4ed8" stroke-width="1" rx="1"/>
+      <line id="scanBeam" x1="135" y1="142" x2="165" y2="142"
+            stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round" opacity="0.9">
+        <animateTransform attributeName="transform" type="translate"
+          from="0,-15" to="0,15" dur="0.9s" repeatCount="indefinite" calcMode="linear"/>
+        <animate attributeName="opacity" values="0.9;0.15;0.9" dur="0.9s" repeatCount="indefinite"/>
+      </line>
+      <circle id="detLed" cx="170" cy="125" r="3.5" fill="#16a34a"/>
+      <circle cx="170" cy="125" r="2" fill="#4ade80" opacity="0.6"/>
+      <rect x="177" y="118" width="60" height="28" fill="#eff6ff" stroke="#2563eb" stroke-width="0.8" rx="2"/>
+      <text x="180" y="128" font-size="7.2" fill="#2563eb" font-weight="700">METTLER</text>
+      <text x="180" y="136" font-size="7.2" fill="#2563eb" font-weight="700">TOLEDO</text>
+      <text x="180" y="144" font-size="6.9" fill="#2563eb" font-weight="700">MD SYSTEM</text>
+      <rect x="136" y="113" width="28" height="6" fill="url(#stl)" rx="1"/>
+      <rect x="136" y="164" width="28" height="6" fill="url(#stl)" rx="1"/>
+      <rect x="143" y="160" width="14" height="6" fill="#9ca3af"/>
+
+      <polygon points="138,170 162,170 162,176 170,184 170,198 162,206 162,252 138,252 138,236 120,236 120,218 138,218"
+               fill="url(#cylH)" stroke="#6b7280" stroke-width="0.8" stroke-linejoin="round"/>
+      <g clip-path="url(#yValveClip)">
+        <rect id="yPipeFlow" x="143" y="170" width="14" height="82" fill="url(#flow)" opacity="0"/>
+      </g>
+      <line x1="150" y1="171" x2="150" y2="252" stroke="#9ca3af" stroke-width="0.7" opacity="0.45"/>
+      <polygon points="104,220 138,220 138,232 104,230"
+               fill="url(#cylH)" stroke="#6b7280" stroke-width="0.6" stroke-linejoin="round"/>
+      <polygon points="160,175 168,182 188,207 180,213 160,199"
+               fill="url(#cylH)" stroke="#6b7280" stroke-width="0.6" stroke-linejoin="round"/>
+
+      <rect x="148" y="86" width="4" height="12" fill="#6b7280" rx="1"/>
+      <rect x="145" y="85" width="10" height="4" fill="url(#stl)" rx="1"/>
+      <rect id="valve" x="137" y="97" width="26" height="7" fill="#c97332" rx="2"
+            transform-origin="150 100"/>
+
+      <rect x="143" y="104" width="14" height="10" fill="url(#cylH)" stroke="#6b7280" stroke-width="0.5"/>
+
+      <polygon points="68,10 232,10 176,92 124,92"
+               fill="#f1f5f9" stroke="#6b7280" stroke-width="1.5"/>
+      <polygon id="hopperFill" points="72,14 228,14 173,88 127,88" fill="url(#pnut)"/>
+      <rect x="65" y="6" width="170" height="8" fill="url(#stl)" rx="2"/>
+      <rect x="133" y="88" width="34" height="8" fill="url(#stl)" rx="1"/>
+
+      <g opacity="0.95">
+        <line x1="157" y1="104" x2="334" y2="104" stroke="#6b7280" stroke-width="0.5" opacity="0.65"/>
+        <line x1="159" y1="260" x2="334" y2="260" stroke="#6b7280" stroke-width="0.5" opacity="0.65"/>
+        <line x1="334" y1="104" x2="334" y2="260" stroke="#374151" stroke-width="1.3"
+              marker-start="url(#dimArrow)" marker-end="url(#dimArrow)"/>
+        <line x1="328" y1="104" x2="340" y2="104" stroke="#374151" stroke-width="1"/>
+        <line x1="328" y1="260" x2="340" y2="260" stroke="#374151" stroke-width="1"/>
+        <text x="338" y="190" font-size="13" fill="#374151" font-weight="700">1.6 m</text>
+      </g>
+
+      <g opacity="0.95">
+        <line x1="157" y1="104" x2="385" y2="104" stroke="#6b7280" stroke-width="0.5" opacity="0.65"/>
+        <line x1="224" y1="527" x2="385" y2="527" stroke="#6b7280" stroke-width="0.5" opacity="0.65"/>
+        <line x1="385" y1="104" x2="385" y2="527" stroke="#374151" stroke-width="1.4"
+              marker-start="url(#dimArrow)" marker-end="url(#dimArrow)"/>
+        <line x1="379" y1="104" x2="391" y2="104" stroke="#374151" stroke-width="1"/>
+        <line x1="379" y1="527" x2="391" y2="527" stroke="#374151" stroke-width="1"/>
+        <text x="389" y="322" font-size="13" fill="#374151" font-weight="700">4.4 m</text>
+      </g>
+
+      <text x="2" y="38" font-size="9.8" fill="#111827" font-weight="700">HOPPER</text>
+      <text x="-26" y="50" font-size="8.8" fill="#6b7280">RAW SHELLED PEANUTS</text>
+
+      <line x1="163" y1="100" x2="236" y2="90" stroke="#6b7280" stroke-width="0.8"/>
+      <circle cx="236" cy="90" r="1.5" fill="#6b7280"/>
+      <text x="244" y="93" font-size="9.8" fill="#111827" font-weight="700">INLET VALVE</text>
+
+      <line x1="125" y1="144" x2="108" y2="144" stroke="#6b7280" stroke-width="0.8"/>
+      <circle cx="108" cy="144" r="1.5" fill="#6b7280"/>
+      <text x="2" y="144" font-size="9.8" fill="#111827" font-weight="700">MD - GF PROFILE</text>
+      <text x="-8" y="158" font-size="8.4" fill="#6b7280">THOUGHPUT TUBE R200 mm</text>
+      <text x="-8" y="169" font-size="8.4" fill="#6b7280">FLOW RATE 10,000 KG/H</text>
+
+      <line x1="184" y1="210" x2="226" y2="224" stroke="#6b7280" stroke-width="0.8"/>
+      <circle cx="226" cy="224" r="1.5" fill="#6b7280"/>
+      <text x="234" y="227" font-size="8.4" fill="#111827" font-weight="700">REJECTED PRODUCT</text>
+
+      <line x1="143" y1="204" x2="124" y2="204" stroke="#6b7280" stroke-width="0.8"/>
+      <circle cx="124" cy="204" r="1.5" fill="#6b7280"/>
+      <text x="70" y="206" font-size="9.2" fill="#111827" font-weight="700">R250 mm</text>
+      <line x1="104" y1="226" x2="54" y2="226" stroke="#6b7280" stroke-width="0.8"/>
+      <circle cx="54" cy="226" r="1.5" fill="#6b7280"/>
+      <text x="-50" y="229" font-size="8.8" fill="#111827" font-weight="700">PRODUCT SAMPLING</text>
+
+      <line x1="159" y1="372" x2="240" y2="372" stroke="#6b7280" stroke-width="0.8"/>
+      <circle cx="240" cy="372" r="1.5" fill="#6b7280"/>
+      <text x="244" y="375" font-size="9.8" fill="#111827" font-weight="700">TELESCOPIC TUBE</text>
+
+      <line x1="205" y1="448" x2="238" y2="448" stroke="#6b7280" stroke-width="0.8"/>
+      <circle cx="238" cy="448" r="1.5" fill="#6b7280"/>
+      <text x="247" y="442" font-size="9.8" fill="#111827" font-weight="700">BIG BAG</text>
+      <text x="247" y="454" font-size="8.8" fill="#6b7280">W x L x H:</text>
+      <text x="247" y="465" font-size="8.8" fill="#6b7280">90cm x 90cm x 1.9m</text>
+      <text x="247" y="477" font-size="8.8" fill="#6b7280">Level-filled system</text>
+
+      <line x1="79" y1="282" x2="48" y2="302" stroke="#6b7280" stroke-width="0.8"/>
+      <circle cx="48" cy="302" r="1.5" fill="#6b7280"/>
+      <text x="-16" y="306" font-size="9.8" fill="#111827" font-weight="700">LOAD CELL</text>
+    </svg>
+  </div>
+
+  <div class="sidebar">
+    <div class="card">
+      <div class="lbl">PROCESS STATUS</div>
+      <div class="phase-name" id="phaseName">IDLE</div>
+      <div class="phase-desc" id="phaseDesc">System waiting.
+Empty big bag. Telescopic tube in upper position.</div>
+    </div>
+
+    <div class="weight-card">
+      <div class="lbl">WEIGHT</div>
+      <div class="weight-num" id="wNum">0</div>
+      <div class="weight-unit">kg</div>
+      <div class="weight-target">Target filling weight: ~870 kg</div>
+      <div class="prog-bar">
+        <div class="prog-fill" id="progFill"></div>
+      </div>
+    </div>
+
+    <div class="card metal-row">
+      <div class="led" id="mLed"></div>
+      <div>
+        <div class="metal-txt" id="mTxt">OK - NO METAL DETECTED</div>
+        <div class="metal-sub">Mettler Toledo</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="lbl" style="margin-bottom:6px">COMPONENTS</div>
+      <div class="legend">
+        <div class="legend-item">
+          <div class="ldot" style="background:#bea273"></div>
+          <div class="ltxt">Raw peanuts - choke flow operation (no free fall)</div>
+        </div>
+        <div class="legend-item">
+          <div class="ldot" style="background:#1d4ed8"></div>
+          <div class="ltxt">Mettler Toledo metal detector</div>
+        </div>
+        <div class="legend-item">
+          <div class="ldot" style="background:#6b7280"></div>
+          <div class="ltxt">200 mm tube + retractable telescopic tube</div>
+        </div>
+        <div class="legend-item">
+          <div class="ldot" style="background:#c97332"></div>
+          <div class="ltxt">Load cells x4 (continuous weighing)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="btnToggle" class="on">Pause</button>
+      <button id="btnReset">Reset</button>
+    </div>
+
+    <div class="note">2D side view - Approx. scale 1:100</div>
+  </div>
+</div>
+
+<script>
+// ==========================================================
+//  CONSTANTS
+// ==========================================================
+const BAG_TOP_Y    = 353;  // y-coord where bag content starts (inner top)
+const BAG_BOT_Y    = 508;  // y-coord bag bottom (inner)
+const BAG_H        = BAG_BOT_Y - BAG_TOP_Y;   // 155 px
+
+// Talud constants (angle of repose ~28Â° for peanuts)
+const SLOPE_TAN    = Math.tan(28 * Math.PI / 180); // ~0.532
+const HALF_BAG     = 54;                            // half bag width in px
+const HUMP_H       = Math.round(HALF_BAG * SLOPE_TAN); // ~29 px - constant peak when walls reached
+
+// Outer tele section is FIXED: top=260, height=68 -> bottom=328
+const T0_BOT_Y = 328;
+// Middle section initial: y=428, h=72, bottom=500
+const T1_H_MAX = 72;
+// Inner section initial: y=500, h=108, bottom=608 (tip at bag bottom)
+const T2_H_MAX = 108;
+
+// Physical retraction limit: the tip cannot go higher than this y-coordinate.
+// When the tip reaches MIN_TIP_Y the telescopic has retracted as far as mechanically possible.
+// After this point the pile continues to grow toward the tip until it blocks the exit (~87% fill).
+const MIN_TIP_Y    = 345;
+const MAX_FILL_PCT = 0.87;  // target fill (~870 kg)
+
+// Material still in pipe+tele when valve closes contributes to final fill.
+// Valve closes early so that draining the column completes the remaining kg.
+const PIPE_CONTRIB    = 0.05;  // main pipe drain -> ~50 kg
+const TELE_CONTRIB    = 0.07;  // telescopic drain -> ~70 kg
+const VALVE_CLOSE_PCT = MAX_FILL_PCT - PIPE_CONTRIB - TELE_CONTRIB;  // ~0.75 -> ~750 kg
+const TALUD_MAX_PCT   = 0.04;  // fill at end of STARTUP (initial drip pile)
+
+const TARGET_KG = 1000;
+
+const PIPE_TOP_Y  = 170;  // y top of main pipe
+const PIPE_BOT_Y  = 252;  // y bottom of main pipe (after flange)
+const INIT_TIP_Y  = BAG_BOT_Y - 10;  // tip starting position: 10px above bag bottom
+
+const PHASES = [
+  { name: 'IDLE', dur: 2500,
+    desc: 'System waiting.\nEmpty big bag. Telescopic tube in upper position.' },
+  { name: 'LOWERING', dur: 2800,
+    desc: 'Telescopic tube lowers to the bottom of the big bag\npreparing for filling.' },
+  { name: 'STARTUP', dur: 3800,
+    desc: 'Valve opens - product descends through the pipe\\nand starts filling the tube.' },
+  { name: 'FILLING', dur: 14000,
+    desc: 'Bottom-up filling.\nTelescopic tube retracts. Valve closes at ~750 kg\n(the full pipe completes the 870 kg).' },
+  { name: 'CLOSING', dur: 3800,
+    desc: 'Valve closed - pipe and telescopic tube drain.\\nRemaining product falls into the bag:\\n+50 kg (pipe) +70 kg (telescopic) = 870 kg.' },
+  { name: 'COMPLETE', dur: 3000,
+    desc: 'Big bag weighed: 870 kg.\\nTelescopic tube fixed - the center mound\\nis the signature of choke flow.' }
+];
+
+const TOTAL_DUR = PHASES.reduce((s, p) => s + p.dur, 0);
+
+// ==========================================================
+//  HELPERS
+// ==========================================================
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const lerp  = (a, b, t)   => a + (b - a) * t;
+
+function easeInOut(t) {
+  t = clamp(t, 0, 1);
+  return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+}
+
+function setA(el, attrs) {
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+}
+
+// ==========================================================
+//  DOM REFS
+// ==========================================================
+const bagFillPolyEl = document.getElementById('bagFillPoly');
+const bagFlowPolyEl = document.getElementById('bagFlowPoly');
+const fillLine      = document.getElementById('fillLine');
+const pipeFlow      = document.getElementById('pipeFlow');
+const yPipeFlow     = document.getElementById('yPipeFlow');
+const teleFlowEl    = document.getElementById('teleFlow');
+const teleFillEl    = document.getElementById('teleFill');
+const tipFanEl      = document.getElementById('tipFan');
+
+// ==========================================================
+//  DRIZZLE PARTICLE SYSTEM
+// ==========================================================
+const N_DRIZZLE  = 16;
+const GRAIN_CLR  = ['#d5be94','#cdb283','#bea273','#d9c49e','#b79968','#d1b788'];
+const drizzleGrp = document.getElementById('tDrizzle');
+const dEls       = [];
+const dParts     = [];
+
+for (let i = 0; i < N_DRIZZLE; i++) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+  el.setAttribute('rx', String((3 + (i % 4) * 0.7).toFixed(1)));
+  el.setAttribute('ry', String((2 + (i % 3) * 0.5).toFixed(1)));
+  el.setAttribute('fill', GRAIN_CLR[i % GRAIN_CLR.length]);
+  el.setAttribute('opacity', '0');
+  drizzleGrp.appendChild(el);
+  dEls.push(el);
+  dParts.push({ x: 150, y: 400, sx: 150, sy: 400, vx: 0, vy: 0, life: 0 });
+}
+
+function updateDrizzle(tipY, peakY, baseY, active) {
+  const CX = 150, BL = 96, BR = 204;
+
+  if (!active) {
+    tipFanEl.setAttribute('opacity', '0');
+    for (let i = 0; i < N_DRIZZLE; i++) { dParts[i].life = 0; dEls[i].setAttribute('opacity', '0'); }
+    return;
+  }
+
+  const slopeH   = Math.max(2, baseY - peakY);
+  const slopeMag = Math.hypot(HALF_BAG, slopeH);
+  const ux = HALF_BAG / slopeMag;
+  const uy = slopeH   / slopeMag;
+
+  for (let i = 0; i < N_DRIZZLE; i++) {
+    if (dParts[i].life <= 0 && Math.random() < 0.38) {
+      const goLeft = Math.random() < 0.5;
+      const spd    = 0.9 + Math.random() * 0.9;
+      const sx     = CX + (Math.random() - 0.5) * 4;
+      const sy     = peakY + Math.random() * 1.5;
+      dParts[i] = { x: sx, y: sy, sx, sy, vx: (goLeft ? -ux : ux) * spd, vy: uy * spd, life: 1.0 };
+      break;
+    }
+  }
+
+  for (let i = 0; i < N_DRIZZLE; i++) {
+    const p = dParts[i];
+    if (p.life <= 0) { dEls[i].setAttribute('opacity', '0'); continue; }
+
+    p.x    += p.vx;
+    p.y    += p.vy;
+    p.life -= 0.042;
+
+    if (p.x < BL - 1 || p.x > BR + 1 || p.y > baseY + 1 || p.life <= 0) {
+      p.life = 0; dEls[i].setAttribute('opacity', '0'); continue;
+    }
+
+    const dist   = Math.hypot(p.x - p.sx, p.y - p.sy);
+    const fadeIn = Math.min(1, dist / 5);
+    const op     = (fadeIn * p.life * 0.75).toFixed(2);
+    dEls[i].setAttribute('cx', p.x.toFixed(1));
+    dEls[i].setAttribute('cy', p.y.toFixed(1));
+    dEls[i].setAttribute('opacity', op);
+  }
+
+  tipFanEl.setAttribute('opacity', '0');
+}
+
+const t1El       = document.getElementById('t1');
+const t2El       = document.getElementById('t2');
+const j1El       = document.getElementById('j1');
+const valveEl    = document.getElementById('valve');
+const phaseNm    = document.getElementById('phaseName');
+const phaseDsc   = document.getElementById('phaseDesc');
+const wNum       = document.getElementById('wNum');
+const progFill   = document.getElementById('progFill');
+const mLed       = document.getElementById('mLed');
+const mTxt       = document.getElementById('mTxt');
+
+// ==========================================================
+//  UPDATERS
+// ==========================================================
+function getPileTopY(pct) {
+  if (pct < 0.005) return BAG_BOT_Y;
+  const baseY      = Math.round(BAG_BOT_Y - BAG_H * pct);
+  const humpScale  = Math.min(1, pct / 0.15);
+  const hump       = Math.round(HUMP_H * humpScale);
+  const headroom   = Math.max(0, baseY - BAG_TOP_Y);
+  const naturalPeak = baseY - Math.min(hump, headroom);
+  return Math.max(naturalPeak, BAG_TOP_Y);
+}
+
+function getBagPoints(fillPct) {
+  if (fillPct < 0.005) return null;
+  const BBOT  = BAG_BOT_Y, BL = 96, BR = 204, CX = 150;
+  const baseY = Math.round(BBOT - BAG_H * fillPct);
+  const peakY = getPileTopY(fillPct);
+  const flatHalfW = Math.round(lerp(3, 9, clamp(fillPct / MAX_FILL_PCT, 0, 1)));
+  const flatL = CX - flatHalfW;
+  const flatR = CX + flatHalfW;
+  return `${BL},${BBOT} ${BR},${BBOT} ${BR},${baseY} ${flatR},${peakY} ${flatL},${peakY} ${BL},${baseY}`;
+}
+
+function applyFill(pct) {
+  const pts = getBagPoints(pct);
+  const vis = pct > 0.005;
+  if (pts) {
+    bagFillPolyEl.setAttribute('points', pts);
+    bagFlowPolyEl.setAttribute('points', pts);
+  }
+  bagFillPolyEl.setAttribute('opacity', vis ? '0.88' : '0');
+  const lineY = Math.round(BAG_BOT_Y - BAG_H * pct);
+  setA(fillLine, { y1: lineY, y2: lineY, opacity: vis ? '1' : '0' });
+}
+
+function applyTelescopic(tipY) {
+  const avail = Math.max(10, tipY - T0_BOT_Y);
+
+  let t1H, t2H;
+  if (avail >= T1_H_MAX + 5) {
+    t1H = T1_H_MAX;
+    t2H = Math.max(5, avail - T1_H_MAX);
+  } else {
+    t1H = Math.max(5, avail - 5);
+    t2H = 5;
+  }
+
+  const t1Y = T0_BOT_Y;
+  const t2Y = t1Y + t1H;
+
+  setA(t1El, { y: t1Y, height: t1H });
+  setA(t2El, { y: t2Y, height: t2H });
+  setA(j1El, { x1: 143, x2: 157, y1: t2Y, y2: t2Y });
+
+  const totalH = t1H + t2H;
+  setA(teleFlowEl, { y: String(t1Y), height: String(totalH) });
+  return { t1Y, totalH };
+}
+
+function applyPipePartial(fillFrac, flowActive, bagFillPct) {
+  const pipeH = PIPE_BOT_Y - PIPE_TOP_Y;
+  const h     = Math.round(clamp(fillFrac, 0, 1) * pipeH);
+  const y     = PIPE_TOP_Y + (pipeH - h);
+  setA(pipeFlow, { y: String(y), height: String(h), opacity: h > 0 ? '0.95' : '0' });
+  setA(yPipeFlow, { y: String(y), height: String(h), opacity: h > 0 ? '0.95' : '0' });
+  setA(teleFlowEl, { opacity: (flowActive && fillFrac >= 0.99) ? '0.85' : '0' });
+  bagFlowPolyEl.setAttribute('opacity', flowActive && bagFillPct > 0.015 ? '0.6' : '0');
+}
+
+function applyValve(open) {
+  valveEl.setAttribute('transform', open ? 'rotate(85,150,100)' : '');
+  valveEl.setAttribute('opacity', open ? '0' : '1');
+}
+
+function applyWeight(pct) {
+  const kg = Math.round(pct * TARGET_KG);
+  wNum.textContent = kg.toLocaleString('en-US');
+  progFill.style.width = (pct * 100).toFixed(1) + '%';
+}
+
+function applyPhase(idx) {
+  const p = PHASES[idx];
+  phaseNm.textContent  = p.name;
+  phaseDsc.textContent = p.desc;
+}
+
+// ==========================================================
+//  ANIMATION LOOP
+// ==========================================================
+let running   = true;
+let startTs   = null;
+let pauseTs   = null;
+let lastPhase = -1;
+
+function tick(ts) {
+  requestAnimationFrame(tick);
+
+  if (!running) {
+    if (pauseTs === null) pauseTs = ts;
+    return;
+  }
+
+  if (pauseTs !== null) {
+    if (startTs !== null) startTs += ts - pauseTs;
+    pauseTs = null;
+  }
+
+  if (!startTs) startTs = ts;
+
+  const loopT = (ts - startTs) % TOTAL_DUR;
+
+  let cum = 0, phaseIdx = 0, phaseT = 0;
+  for (let i = 0; i < PHASES.length; i++) {
+    if (loopT < cum + PHASES[i].dur) {
+      phaseIdx = i;
+      phaseT   = (loopT - cum) / PHASES[i].dur;
+      break;
+    }
+    cum += PHASES[i].dur;
+  }
+
+  if (phaseIdx !== lastPhase) {
+    lastPhase = phaseIdx;
+    applyPhase(phaseIdx);
+  }
+
+  let fillPct      = 0;
+  let flowOn       = false;
+  let valveOn      = false;
+  let pipeFillFrac = 0;
+  let tipY         = MIN_TIP_Y;
+  let drainActive  = false;
+  let taludDrip    = false;
+
+  switch (phaseIdx) {
+    case 0: {
+      tipY = MIN_TIP_Y;
+      setA(teleFillEl, { y: String(MIN_TIP_Y), height: '0', opacity: '0' });
+      break;
+    }
+
+    case 1: {
+      tipY = Math.round(lerp(MIN_TIP_Y, INIT_TIP_Y, easeInOut(phaseT)));
+      setA(teleFillEl, { y: String(tipY), height: '0', opacity: '0' });
+      break;
+    }
+
+    case 2: {
+      valveOn = phaseT > 0.15;
+
+      taludDrip    = phaseT > 0.15 && phaseT < 0.55;
+      const taludT = clamp((phaseT - 0.15) / 0.15, 0, 1);
+      fillPct      = taludT * TALUD_MAX_PCT;
+      tipY         = fillPct > 0.001 ? getPileTopY(fillPct) : INIT_TIP_Y;
+
+      const tPart = clamp((phaseT - 0.30) / 0.46, 0, 1);
+      const maxH  = Math.max(0, tipY - T0_BOT_Y);
+      const fillH = Math.round(maxH * tPart);
+      setA(teleFillEl, {
+        y:       String(tipY - fillH),
+        height:  String(fillH),
+        opacity: fillH > 0 ? '0.88' : '0'
+      });
+
+      pipeFillFrac = clamp((phaseT - 0.76) / 0.24, 0, 1);
+      break;
+    }
+
+    case 3: {
+      valveOn      = true;
+      flowOn       = true;
+      pipeFillFrac = 1;
+      fillPct = TALUD_MAX_PCT + (VALVE_CLOSE_PCT - TALUD_MAX_PCT) * phaseT;
+      tipY    = getPileTopY(fillPct);
+      setA(teleFillEl, { opacity: '0' });
+      break;
+    }
+
+    case 4: {
+      valveOn = false;
+      pipeFillFrac = clamp(1 - phaseT / 0.34, 0, 1);
+      const tDrain    = clamp(1 - (phaseT - 0.34) / 0.46, 0, 1);
+      drainActive     = pipeFillFrac > 0.02 || tDrain > 0.02;
+      const pipeDrained = PIPE_CONTRIB * (1 - pipeFillFrac);
+      const teleDrained = TELE_CONTRIB * (1 - tDrain);
+      fillPct = Math.min(VALVE_CLOSE_PCT + pipeDrained + teleDrained, MAX_FILL_PCT);
+      tipY = getPileTopY(fillPct);
+      const maxTeleH = Math.max(0, tipY - T0_BOT_Y);
+      const teleH    = Math.round(maxTeleH * tDrain);
+      setA(teleFillEl, { y: String(tipY - teleH), height: String(teleH), opacity: teleH > 0 ? '0.88' : '0' });
+      break;
+    }
+
+    case 5: {
+      fillPct = MAX_FILL_PCT;
+      tipY    = getPileTopY(fillPct);
+      setA(teleFillEl, { y: String(tipY), height: '0', opacity: '0' });
+      break;
+    }
+  }
+
+  applyFill(fillPct);
+  applyTelescopic(tipY);
+  applyPipePartial(pipeFillFrac, flowOn, fillPct);
+  applyValve(valveOn);
+  applyWeight(fillPct);
+
+  const drizzleActive = (flowOn || drainActive || taludDrip) && fillPct > 0.001;
+  if (drizzleActive) {
+    const peakY = getPileTopY(fillPct);
+    const baseY = Math.round(BAG_BOT_Y - BAG_H * fillPct);
+    updateDrizzle(tipY, peakY, baseY, true);
+  } else {
+    updateDrizzle(0, 0, 0, false);
+  }
+}
+
+requestAnimationFrame(tick);
+
+// ==========================================================
+//  CONTROLS
+// ==========================================================
+document.getElementById('btnToggle').addEventListener('click', function () {
+  running = !running;
+  this.textContent = running ? 'Pause' : 'Play';
+  this.classList.toggle('on', running);
+});
+
+document.getElementById('btnReset').addEventListener('click', function () {
+  startTs   = null;
+  pauseTs   = null;
+  lastPhase = -1;
+  running   = true;
+  const btn = document.getElementById('btnToggle');
+  btn.textContent = 'Pause';
+  btn.classList.add('on');
+});
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
